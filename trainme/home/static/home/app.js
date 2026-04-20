@@ -72,14 +72,14 @@ if (!SpeechRecognition) {
 }
 
 
-function sendToBackend(text) {
+function sendToBackend(text_value) {
     fetch("/speech/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": getCookie("csrftoken")
         },
-        body: JSON.stringify({ text: text })
+        body: JSON.stringify({ text: text_value })
     });
 }
 
