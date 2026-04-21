@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
 import json
 from .transcription_service import TranscriptionService
 from .audio_service import AudioService
@@ -11,8 +12,10 @@ transcription_service = TranscriptionService()
 audio_service = AudioService()
 
 
+@ensure_csrf_cookie
 def home(request):
     return render(request, 'home/home.html')
+
 
 
 def speech_input(request):
