@@ -11,13 +11,16 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
     text = models.TextField()
     from_user = models.BooleanField()
-    count = models.IntegerField()
+    message_number = models.IntegerField()
     created_at = models.DateField(auto_created=True)
+
 
 class AudioRecord(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
     wav_path = models.FilePathField()
     created_at = models.DateField(auto_created=True)
+    text_message = models.ForeignKey(Message, on_delete=models.CASCADE)
+
 
 
 
