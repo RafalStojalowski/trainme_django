@@ -124,23 +124,3 @@ AUDIO_DIR = MEDIA_ROOT / 'wavs'
 os.makedirs(TRANSCRIPTION_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-# Cookie and CSRF settings for localhost and 127.0.0.1 compatibility
-SESSION_COOKIE_DOMAIN = None  # Allow both localhost and 127.0.0.1
-SESSION_COOKIE_NAME = 'sessionid'
-SESSION_COOKIE_AGE = 1209600  # 2 weeks
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
-
-# CSRF settings to accept both localhost and 127.0.0.1
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'http://localhost',
-    'http://127.0.0.1',
-]
-CSRF_COOKIE_DOMAIN = None  # Empty string = current domain only
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
-CSRF_COOKIE_HTTPONLY = False  # JavaScript needs access to CSRF token
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_USE_SESSIONS = False  # Don't store CSRF token in session
