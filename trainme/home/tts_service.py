@@ -47,7 +47,10 @@ class TTSService:
                 device = "cuda" if torch.cuda.is_available() else "cpu"
                 print(f"🔊 Ładowanie XTTS v2 na {device}...")
                 self._tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
-                print("✅ XTTS v2 załadowany")
+                if device == "cuda":
+                    print(f"✅ XTTS v2 załadowany na GPU: {torch.cuda.get_device_name(0)}")
+                else:
+                    print("✅ XTTS v2 załadowany na CPU")
             finally:
                 torch.load = _orig
         return self._tts
