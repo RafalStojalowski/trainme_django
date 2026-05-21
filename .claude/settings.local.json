@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py migrate)",
+      "PowerShell(d:\\\\TrainMe_django\\\\trainme_django\\\\venv\\\\Scripts\\\\python -c \"import gruut; print\\(gruut.__file__\\)\" 2>&1)",
+      "PowerShell(d:\\\\TrainMe_django\\\\trainme_django\\\\venv\\\\Scripts\\\\pip install gruut 2>&1)"
+    ]
+  }
+}

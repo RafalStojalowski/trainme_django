@@ -124,3 +124,7 @@ AUDIO_DIR = MEDIA_ROOT / 'wavs'
 os.makedirs(TRANSCRIPTION_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
+LOGIN_REDIRECT_URL  = '/'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL           = '/login/'
+

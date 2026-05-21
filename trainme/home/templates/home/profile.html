@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil — Train.me</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --pink:     #FF52A2;
+            --bg:       #FAFAFA;
+            --surface:  #ffffff;
+            --border:   #eaeaea;
+            --text:     #111111;
+            --muted:    #666666;
+            --radius:   18px;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 40px 24px;
+        }
+        .wrap {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.15s;
+        }
+        .back-link:hover { color: var(--pink); }
+
+        /* card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 40px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        /* hero */
+        .profile-hero {
+            background: linear-gradient(135deg, #FF52A2 0%, #ff8cc8 100%);
+            padding: 36px 28px 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .profile-avatar {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            border: 2.5px solid rgba(255,255,255,0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            flex-shrink: 0;
+        }
+        .profile-hero-info {
+            min-width: 0;
+        }
+        .profile-username {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .profile-since {
+            font-size: 12px;
+            color: rgba(255,255,255,0.75);
+            margin-top: 3px;
+        }
+
+        /* stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid var(--border);
+        }
+        .stat {
+            padding: 18px 24px;
+            border-right: 1px solid var(--border);
+        }
+        .stat:last-child { border-right: none; }
+        .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--pink);
+        }
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 2px;
+        }
+
+        /* form */
+        .form-section {
+            padding: 24px 28px 28px;
+        }
+        .form-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
+            margin-bottom: 18px;
+        }
+        .field {
+            margin-bottom: 16px;
+        }
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .field input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--bg);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .field input:focus { border-color: var(--pink); }
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .field .errorlist {
+            list-style: none;
+            margin-top: 5px;
+        }
+        .field .errorlist li {
+            font-size: 12px;
+            color: #ef4444;
+        }
+        .btn-save {
+            width: 100%;
+            padding: 13px;
+            background: var(--pink);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.15s, transform 0.15s;
+        }
+        .btn-save:hover { background: #e03d8a; transform: translateY(-1px); }
+
+        /* success toast */
+        .toast {
+            display: none;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #065f46;
+            margin-bottom: 4px;
+        }
+        .toast.show { display: block; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <a href="{% url 'home' %}" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Wróć do rozmowy
+    </a>
+
+    <div class="card">
+        <div class="profile-hero">
+            <div class="profile-avatar">{{ user.username|first|upper }}</div>
+            <div class="profile-hero-info">
+                <div class="profile-username">{{ user.username }}</div>
+                <div class="profile-since">Konto od {{ user.date_joined|date:"j F Y" }}</div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat">
+                <div class="stat-value">{{ conv_count }}</div>
+                <div class="stat-label">Rozmów</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ msg_count }}</div>
+                <div class="stat-label">Wypowiedzi</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-title">Dane konta</div>
+
+            {% if request.method == 'GET' and messages %}
+                <div class="toast show">Zapisano zmiany.</div>
+            {% endif %}
+
+            <form method="post" id="profileForm">
+                {% csrf_token %}
+                <div class="field-row">
+                    <div class="field">
+                        <label for="{{ form.first_name.id_for_label }}">Imię</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<ul class="errorlist">{% for e in form.first_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.last_name.id_for_label }}">Nazwisko</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<ul class="errorlist">{% for e in form.last_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="{{ form.email.id_for_label }}">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<ul class="errorlist">{% for e in form.email.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <button type="submit" class="btn-save">Zapisz zmiany</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    // Show a brief success flash after redirect
+    if (document.referrer.includes('/profile/') && window.location.href.includes('/profile/')) {
+        const t = document.createElement('div');
+        t.className = 'toast show';
+        t.textContent = 'Zapisano zmiany.';
+        document.querySelector('.form-section').prepend(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+</script>
+</body>
+</html>
