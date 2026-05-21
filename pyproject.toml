@@ -1,0 +1,189 @@
+[project]
+name = "trainme-django"
+version = "0.1.0"
+description = "TrainMe - AI speech training assistant"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    # Django
+    "Django==4.2.8",
+    "asgiref==3.11.1",
+    "sqlparse==0.5.5",
+
+    # PyTorch — served from pytorch-cpu index (see [tool.uv.sources])
+    "torch==2.12.0",
+    "torchaudio==2.11.0",
+    "torchcodec==0.13.0",
+
+    # TTS / XTTS v2
+    "TTS==0.22.0",
+    "transformers==4.39.3",
+    "tokenizers==0.15.2",
+    "huggingface_hub==0.36.2",
+    "safetensors==0.7.0",
+    "encodec==0.1.1",
+    "einops==0.8.2",
+    "trainer==0.0.36",
+    "coqpit==0.0.17",
+
+    # Audio processing
+    "soundfile==0.13.1",
+    "librosa==0.11.0",
+    "audioread==3.1.0",
+    "soxr==1.1.0",
+    "numba==0.65.1",
+    "llvmlite==0.47.0",
+    "pooch==1.9.0",
+
+    # NLP / text processing
+    "gruut[de,es,fr]==2.2.3",
+    "gruut-ipa==0.13.0",
+    "gruut-lang-de==2.0.1",
+    "gruut-lang-en==2.0.1",
+    "gruut-lang-es==2.0.1",
+    "gruut-lang-fr==2.0.2",
+    "nltk==3.9.4",
+    "pysbd==0.3.4",
+    "anyascii==0.3.3",
+    "Unidecode==1.4.0",
+    "num2words==0.5.14",
+    "inflect==7.5.0",
+    "bangla==0.0.5",
+    "bnnumerizer==0.0.2",
+    "bnunicodenormalizer==0.1.7",
+    "dateparser==1.1.8",
+    "g2pkk==0.1.2",
+    "hangul-romanize==0.1.0",
+    "jamo==0.4.1",
+    "jieba==0.42.1",
+    "pypinyin==0.55.0",
+    "SudachiPy==0.6.11",
+    "SudachiDict-core==20260428",
+
+    # spaCy
+    "spacy==3.8.14",
+    "spacy-legacy==3.0.12",
+    "spacy-loggers==1.0.5",
+    "thinc==8.3.13",
+    "blis==1.3.3",
+    "catalogue==2.0.10",
+    "confection==1.3.3",
+    "cymem==2.0.13",
+    "murmurhash==1.0.15",
+    "preshed==3.0.13",
+    "srsly==2.5.3",
+    "wasabi==1.1.3",
+    "weasel==1.0.0",
+    "smart_open==7.6.1",
+
+    # ML / scientific
+    "numpy==1.26.4",
+    "scipy==1.17.1",
+    "scikit-learn==1.8.0",
+    "pandas==1.5.3",
+    "matplotlib==3.10.9",
+    "umap-learn==0.5.12",
+    "pynndescent==0.6.0",
+    "networkx==2.8.8",
+    "sympy==1.14.0",
+    "mpmath==1.3.0",
+
+    # Utilities
+    "requests==2.34.2",
+    "pyyaml==6.0.3",
+    "tqdm==4.67.3",
+    "regex==2026.5.9",
+    "packaging==26.2",
+    "filelock==3.29.0",
+    "fsspec==2026.4.0",
+    "psutil==7.2.2",
+    "joblib==1.5.3",
+    "threadpoolctl==3.6.0",
+    "more-itertools==11.0.2",
+    "certifi==2026.5.20",
+    "charset-normalizer==3.4.7",
+    "idna==3.15",
+    "urllib3==2.7.0",
+    "six==1.17.0",
+    "python-dateutil==2.9.0.post0",
+    "pytz==2026.2",
+    "tzdata==2026.2",
+    "tzlocal==5.3.1",
+    "babel==2.18.0",
+    "docopt==0.6.2",
+    "jsonlines==1.2.0",
+    "python-crfsuite==0.9.12",
+    "Cython==3.2.4",
+    "wrapt==2.2.0",
+    "typeguard==4.5.2",
+    "typing_extensions==4.15.0",
+    "annotated-types==0.7.0",
+    "pydantic==2.13.4",
+    "pydantic_core==2.46.4",
+    "cloudpathlib==0.24.0",
+    "shellingham==1.5.4",
+    "typer==0.25.1",
+    "click==8.4.0",
+    "rich==15.0.0",
+    "Pygments==2.20.0",
+    "markdown-it-py==4.2.0",
+    "mdurl==0.1.2",
+    "Markdown==3.10.2",
+
+    # Image / plot
+    "pillow==12.2.0",
+    "contourpy==1.3.1",
+    "cycler==0.12.1",
+    "fonttools==4.63.0",
+    "kiwisolver==1.5.0",
+    "pyparsing==3.3.2",
+
+    # TensorBoard
+    "tensorboard==2.20.0",
+    "tensorboard-data-server==0.7.2",
+    "protobuf==7.35.0",
+    "grpcio==1.80.0",
+    "absl-py==2.4.0",
+
+    # HTTP / async
+    "aiohttp==3.13.5",
+    "aiohappyeyeballs==2.6.2",
+    "aiosignal==1.4.0",
+    "anyio==4.13.0",
+    "attrs==26.1.0",
+    "frozenlist==1.8.0",
+    "multidict==6.7.1",
+    "propcache==0.5.2",
+    "yarl==1.24.2",
+    "httpx==0.28.1",
+    "httpcore==1.0.9",
+    "h11==0.16.0",
+
+    # Flask (pulled in by TTS trainer)
+    "Flask==3.1.3",
+    "Werkzeug==3.1.3",
+    "itsdangerous==2.2.0",
+    "blinker==1.9.0",
+    "Jinja2==3.1.6",
+    "MarkupSafe==3.0.3",
+
+    # Misc
+    "cffi==2.0.0",
+    "pycparser==3.0",
+    "colorama==0.4.6",
+    "decorator==5.3.1",
+    "lazy-loader==0.5",
+    "msgpack==1.1.2",
+    "platformdirs==4.9.6",
+    "hf-xet==1.5.0",
+    "typing-inspection==0.4.2",
+]
+
+[tool.uv.sources]
+# torch i torchaudio muszą pochodzić z indeksu PyTorch, nie z PyPI
+torch = { index = "pytorch-cpu" }
+torchaudio = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
