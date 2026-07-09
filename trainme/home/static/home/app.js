@@ -23,6 +23,32 @@ let finalTranscription = "";
 let silenceTimer      = null;
 const SILENCE_TIMEOUT = 2000;
 
+// ── Conversation lifecycle — auto-end on inactivity or tab close ──────────────
+// The persona only learns from a conversation once it's "ended" (new_conversation),
+// so an idle chat or a closed tab must trigger that too, not just the explicit button.
+const IDLE_CONVERSATION_TIMEOUT = 5 * 60 * 1000; // 5 min of no new turns
+let idleConversationTimer = null;
+
+function resetIdleConversationTimer() {
+    if (idleConversationTimer) clearTimeout(idleConversationTimer);
+    idleConversationTimer = setTimeout(endConversationSilently, IDLE_CONVERSATION_TIMEOUT);
+}
+
+function endConversationSilently() {
+    if (idleConversationTimer) { clearTimeout(idleConversationTimer); idleConversationTimer = null; }
+    fetch("/conversations/new/", {
+        method:  "POST",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+    }).catch(() => {});
+}
+
+// Best-effort finalize on tab close/refresh — fetch is unreliable during unload,
+// sendBeacon is fire-and-forget and survives page teardown.
+window.addEventListener("pagehide", () => {
+    const body = new URLSearchParams({ csrfmiddlewaretoken: getCookie("csrftoken") || "" });
+    navigator.sendBeacon("/conversations/new/", body);
+});
+
 // ── WavRecorder — real 16-bit PCM WAV via AudioContext ────────────────────────
 class WavRecorder {
     constructor() {
@@ -254,6 +280,7 @@ async function sendFinalTranscription(text) {
             statusText.textContent = "Kliknij i zacznij mówić";
             if (data.bot_response) appendBotMessage(data.bot_response, data.bot_audio_url || null);
             console.log(`✅ Conv #${data.conversation_id} | msg #${data.message_number}`);
+            resetIdleConversationTimer();
         } else if (data.status === "error") {
             statusText.textContent = "Błąd: " + data.message;
         }
@@ -392,6 +419,11 @@ function renderConversations(convs) {
                         <div class="conv-preview">${preview}</div>
                     </div>
                     ${memoryDotsHtml(c.message_count)}
+                    <button class="conv-delete-btn" data-id="${c.id}" title="Usuń rozmowę">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                            <path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.6 9a1 1 0 0 0 1 .9h3.8a1 1 0 0 0 1-.9l.6-9"/>
+                        </svg>
+                    </button>
                 </div>`;
             index++;
         }
@@ -401,6 +433,37 @@ function renderConversations(convs) {
     convList.querySelectorAll(".conv-item").forEach(el => {
         el.addEventListener("click", () => switchConversation(parseInt(el.dataset.id)));
     });
+    convList.querySelectorAll(".conv-delete-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteConversation(parseInt(btn.dataset.id));
+        });
+    });
+}
+
+async function deleteConversation(id) {
+    if (!confirm("Usunąć tę rozmowę?")) return;
+
+    try {
+        const res = await fetch(`/conversations/${id}/delete/`, {
+            method:  "POST",
+            headers: { "X-CSRFToken": getCookie("csrftoken") },
+        });
+        if (!res.ok) throw new Error(`delete failed: ${res.status}`);
+
+        const wasActive = convList
+            .querySelector(`.conv-item[data-id="${id}"]`)
+            ?.classList.contains("active");
+
+        await loadConversations();
+
+        if (wasActive) {
+            messagesEl.innerHTML = "";
+            appendBotMessage('Cześć. Jestem Train<strong>.me</strong>. Słucham cię — im więcej mówisz, tym bardziej staję się tobą.');
+        }
+    } catch (err) {
+        console.error("Błąd usuwania rozmowy:", err);
+    }
 }
 
 async function switchConversation(id) {
@@ -426,6 +489,7 @@ async function switchConversation(id) {
 }
 
 newConvBtn.addEventListener("click", async () => {
+    if (idleConversationTimer) { clearTimeout(idleConversationTimer); idleConversationTimer = null; }
     await fetch("/conversations/new/", {
         method:  "POST",
         headers: { "X-CSRFToken": getCookie("csrftoken") },

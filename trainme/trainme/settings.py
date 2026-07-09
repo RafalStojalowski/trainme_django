@@ -10,10 +10,17 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# llm_engine/ lives one level up (repo root), as a sibling of the Django project
+# dir (BASE_DIR) rather than inside it, so it must be added to sys.path manually.
+REPO_ROOT = BASE_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 # Quick-start development settings - unsuitable for production
@@ -123,6 +130,34 @@ AUDIO_DIR = MEDIA_ROOT / 'wavs'
 
 os.makedirs(TRANSCRIPTION_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
+
+# Base64-encoded audio in /speech/ requests can exceed Django's 2.5MB default
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50MB
+
+# Persona teacher/student agents (llm_engine/) — local Ollama models
+PERSONA_DIR = MEDIA_ROOT / 'personas'
+os.makedirs(PERSONA_DIR, exist_ok=True)
+
+OLLAMA_MODEL = "qwen3:8b"
+OLLAMA_EMBED_MODEL = "nomic-embed-text"
+PERSONA_TRAIN_MAX_ITERATIONS = 5
+PERSONA_TRAIN_CONVERGENCE_EPS = 0.02
+
+# Voice-cloning reference clips (tts_engine/) — curated per user, not media/,
+# since it's raw voice biometric data rather than app-served media.
+TTS_VOICES_DIR = REPO_ROOT / 'tts_engine' / 'voices'
+os.makedirs(TTS_VOICES_DIR, exist_ok=True)
+TTS_VOICE_MAX_CLIPS = 3
+
+# Real XTTS GPT fine-tuning (tts_engine/finetune.py) — heavy, GPU-bound, only
+# ever triggered manually via `manage.py finetune_voice` (see plan/README).
+TTS_FINETUNE_DIR = REPO_ROOT / 'tts_engine' / 'finetune_runs'
+os.makedirs(TTS_FINETUNE_DIR, exist_ok=True)
+TTS_FINETUNE_MIN_SECONDS = 120
+TTS_FINETUNE_LANGUAGE = "pl"
+TTS_FINETUNE_EPOCHS = 10
+TTS_FINETUNE_BATCH_SIZE = 4
 
 LOGIN_REDIRECT_URL  = '/'
 LOGOUT_REDIRECT_URL = '/'

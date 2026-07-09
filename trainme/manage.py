@@ -3,6 +3,14 @@
 import os
 import sys
 
+# Windows consoles default to a narrow codepage (e.g. cp1250), which can't
+# encode the emoji used in views.py's print() logging and crashes with
+# UnicodeEncodeError. Force UTF-8 before anything else (e.g. colorama) wraps
+# stdout/stderr.
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 def main():
     """Run administrative tasks."""

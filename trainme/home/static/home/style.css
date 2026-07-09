@@ -491,6 +491,32 @@ body {
     background: var(--pink);
 }
 
+/* Delete button — reveal on row hover */
+.conv-delete-btn {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.conv-item:hover .conv-delete-btn {
+    opacity: 1;
+}
+
+.conv-delete-btn:hover {
+    background: rgba(239,68,68,0.12);
+    color: #ef4444;
+}
+
 /* Empty state */
 .conv-empty {
     padding: 40px 16px;

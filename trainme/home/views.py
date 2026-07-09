@@ -9,13 +9,21 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import json
 import os
+import threading
 from .transcription_service import TranscriptionService
 from .audio_service import AudioService
 from .tts_service import TTSService
+from .persona_service import PersonaService
+from .voice_service import VoiceService
+from .voice_finetune_service import VoiceFinetuneService
 from .models import TranscriptionSession, TranscriptionSentence, Conversation, Message, AudioRecord
+from llm_engine.emotion import classify_emotion
 
 
 tts_service = TTSService()
+persona_service = PersonaService()
+voice_service = VoiceService()
+voice_finetune_service = VoiceFinetuneService()
 
 
 class ProfileForm(forms.ModelForm):
@@ -121,16 +129,54 @@ def speech_input(request):
                         file_path=str(sentence_file_path)
                     )
 
-                # TODO: replace with real LLM call
-                bot_text = text
+                # Fetch/create conversation early so the student agent can see prior turns
+                conversation = _get_or_create_conversation(request) if request.user.is_authenticated else None
 
-                # Generate TTS audio for bot response
+                # Persona student: reply in-persona using the knowledge trained so far.
+                # Training itself happens once, in batch, when the conversation ends
+                # (see new_conversation) — not on every turn. Guests and any Ollama
+                # failure fall back to the previous echo behavior.
+                bot_text = text
+                if request.user.is_authenticated:
+                    try:
+                        history = [
+                            ("user" if m.from_user else "assistant", m.text)
+                            for m in conversation.messages.order_by('-message_number')[:6]
+                        ][::-1]
+                        bot_text = persona_service.generate_reply(request.user, text, history) or text
+                    except Exception as e:
+                        print(f"⚠️ StudentAgent błąd, fallback na echo: {e}")
+                else:
+                    print("ℹ️ Gość — generyczna odpowiedź (echo), brak profilu")
+
+                # Generate TTS audio for bot response. Prefer the curated set of
+                # reference clips (built up over past conversations) for a more
+                # stable voice clone; fall back to this utterance's own recording
+                # for guests or before any clips have been curated yet.
+                speaker_reference = audio_path
+                finetuned_checkpoint_dir = None
+                if request.user.is_authenticated:
+                    try:
+                        stored_clips = voice_service.get_reference_clips_for_user(request.user)
+                        if stored_clips:
+                            speaker_reference = stored_clips
+                    except Exception as e:
+                        print(f"⚠️ Nie udało się pobrać klipów referencyjnych głosu: {e}")
+                    try:
+                        finetuned_checkpoint_dir = voice_finetune_service.checkpoint_dir_for_user(request.user)
+                    except Exception as e:
+                        print(f"⚠️ Nie udało się sprawdzić fine-tunowanego checkpointu: {e}")
+
                 bot_audio_url = None
                 if audio_path:
                     try:
-                        bot_audio_path = tts_service.synthesize(bot_text, audio_path)
+                        bot_audio_path = tts_service.synthesize(
+                            bot_text, speaker_reference,
+                            finetuned_checkpoint_dir=finetuned_checkpoint_dir,
+                        )
                         bot_audio_url  = settings.MEDIA_URL + "tts/" + os.path.basename(bot_audio_path)
-                        print(f"🔊 TTS wygenerowany: {bot_audio_path}")
+                        mode = "fine-tune" if finetuned_checkpoint_dir else "zero-shot"
+                        print(f"🔊 TTS wygenerowany ({mode}): {bot_audio_path}")
                     except Exception as e:
                         print(f"⚠️ TTS błąd: {e}")
 
@@ -138,7 +184,6 @@ def speech_input(request):
                 conversation_id = None
                 message_number  = None
                 if request.user.is_authenticated:
-                    conversation   = _get_or_create_conversation(request)
                     message_number = conversation.messages.count() + 1
                     message = Message.objects.create(
                         conversation=conversation,
@@ -238,11 +283,104 @@ def conversation_messages(request, conv_id):
     return JsonResponse({'messages': msgs, 'conversation_id': conv_id})
 
 
+def _train_persona_async(user, transcript):
+    try:
+        persona_service.train_for_user(user, transcript)
+    except Exception as e:
+        print(f"⚠️ Trening persony (koniec rozmowy) nie powiódł się: {e}")
+
+
+def _start_persona_training(user, transcript):
+    # Training takes several Ollama round-trips (multiple iterations) — running it
+    # inline would make "Nowa rozmowa" (and the idle/unload auto-finalize) hang for
+    # tens of seconds. Fire-and-forget in a background thread instead; the response
+    # to the client doesn't depend on training having finished.
+    threading.Thread(target=_train_persona_async, args=(user, transcript), daemon=True).start()
+
+
+def _best_audio_record(conversation):
+    """Picks the largest (roughly: longest) recording from the conversation as
+    the one worth keeping as a voice reference — cheap proxy for "most useful
+    sample" without any real audio analysis."""
+    records = list(AudioRecord.objects.filter(conversation=conversation))
+    if not records:
+        return None
+
+    def size(record):
+        try:
+            return os.path.getsize(record.wav_path)
+        except OSError:
+            return 0
+
+    return max(records, key=size)
+
+
+def _curate_voice_clip_async(user, wav_path, transcript):
+    try:
+        emotion = classify_emotion(transcript)
+    except Exception as e:
+        print(f"⚠️ Klasyfikacja emocji nie powiodła się, fallback na neutral: {e}")
+        emotion = "neutral"
+    try:
+        voice_service.add_clip_for_user(user, wav_path, emotion=emotion)
+    except Exception as e:
+        print(f"⚠️ Nie udało się zapisać klipu głosowego: {e}")
+
+
+def _start_voice_curation(user, wav_path, transcript):
+    # Same reasoning as _start_persona_training: classify_emotion is an Ollama
+    # call, so keep it off the request path that new_conversation needs to
+    # answer quickly.
+    threading.Thread(
+        target=_curate_voice_clip_async, args=(user, wav_path, transcript), daemon=True
+    ).start()
+
+
 def new_conversation(request):
     if request.method == 'POST':
+        conversation_id = request.session.get('conversation_id')
+        if request.user.is_authenticated and conversation_id:
+            try:
+                conversation = Conversation.objects.get(id=conversation_id, user=request.user)
+                transcript = "\n".join(
+                    m.text for m in
+                    conversation.messages.filter(from_user=True).order_by('message_number')
+                )
+                if transcript.strip():
+                    _start_persona_training(request.user, transcript)
+
+                best_audio = _best_audio_record(conversation)
+                if best_audio:
+                    _start_voice_curation(request.user, best_audio.wav_path, transcript)
+
+                try:
+                    if voice_finetune_service.is_ready(request.user):
+                        print(
+                            f"🎙️ {request.user.username} ma wystarczająco nagrań do fine-tuningu głosu "
+                            f"(uruchom: python manage.py finetune_voice {request.user.username})"
+                        )
+                except Exception as e:
+                    print(f"⚠️ Nie udało się sprawdzić gotowości do fine-tuningu: {e}")
+            except Conversation.DoesNotExist:
+                pass
         request.session.pop('conversation_id', None)
         return JsonResponse({'status': 'ok'})
     return JsonResponse({'error': 'POST required'}, status=405)
+
+
+def delete_conversation(request, conv_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Musisz być zalogowany'}, status=403)
+    try:
+        conversation = Conversation.objects.get(id=conv_id, user=request.user)
+    except Conversation.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+    conversation.delete()
+    if request.session.get('conversation_id') == conv_id:
+        request.session.pop('conversation_id', None)
+    return JsonResponse({'status': 'ok'})
 
 
 def register(request):

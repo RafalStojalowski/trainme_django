@@ -8,6 +8,7 @@ urlpatterns = [
     path('conversations/', views.conversation_list, name='conversation_list'),
     path('conversations/new/', views.new_conversation, name='new_conversation'),
     path('conversations/<int:conv_id>/messages/', views.conversation_messages, name='conversation_messages'),
+    path('conversations/<int:conv_id>/delete/', views.delete_conversation, name='delete_conversation'),
     path('login/', auth_views.LoginView.as_view(template_name='home/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', views.register, name='register'),

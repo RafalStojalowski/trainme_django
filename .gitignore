@@ -19,6 +19,18 @@ db.sqlite3
 *.log
 local_settings.py
 
+# Voice-cloning reference clips — user voice biometric data, never commit
+tts_engine/voices/
+
+# Fine-tuning working dirs / checkpoints — large, user-specific, never commit
+tts_engine/finetune_runs/
+
+# Audio recordings / synthesized speech — user data, never commit
+*.wav
+
+# Speech transcriptions — user data, never commit
+trainme/media/text_transcription/
+
 # IDE
 .vscode/
 .idea/
